@@ -115,6 +115,29 @@ interface Factory
      * ---
      * description:
      *   purpose: >
+     *      Input groups are an unlabeled collection of inputs. They are used to
+     *      build logical units of other fields. Such units might be used to attach some
+     *      constraints or transformations for multiple fields.
+     *   composition: >
+     *      Groups are composed of inputs. They do not contain a label. The grouping
+     *      remains invisible for the client.
+     *   effect: >
+     *      There is no visible effect using groups.
+     *   rivals:
+     *      sections: Sections are used to generate a visible relation of fields.
+     * rules: []
+     * ---
+     * @param array<mixed,\ILIAS\UI\Component\Input\Input> $inputs
+     * @param string                                                 $label
+     * @param string|null                                            $byline
+     * @return    \ILIAS\UI\Component\Input\Field\Group
+     */
+    public function json(array $inputs, string $label = '', ?string $byline = null): Json;
+
+    /**
+     * ---
+     * description:
+     *   purpose: >
      *      An optional group is a collection of input where the user needs to make
      *      a conscious decision to use or not use the provided inputs.
      *   composition: >

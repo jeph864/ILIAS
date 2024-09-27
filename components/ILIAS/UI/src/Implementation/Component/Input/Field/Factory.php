@@ -64,6 +64,10 @@ class Factory implements I\Factory
     {
         return new Group($this->data_factory, $this->refinery, $this->lng, $inputs, $label, $byline);
     }
+    public function json(array $inputs, string $label = '', ?string $byline = null): Json
+    {
+        return new Json($this->data_factory, $this->refinery, $this->lng, $inputs, $label, $byline);
+    }
 
     public function optionalGroup(array $inputs, string $label, ?string $byline = null): OptionalGroup
     {
