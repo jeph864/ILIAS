@@ -23,16 +23,28 @@ namespace ILIAS\Setup\Activities;
 use ILIAS\Component\Dependencies\Name;
 use ILIAS\UI\Component\Input\Control\Form\FormInput;
 use ILIAS\Data\Result;
-use ILIAS\UI\Component\Input\Input;
+use ILIAS\Data\Text;
 
 class GetStatus extends \ILIAS\Component\Activities\Query
 {
-    public function getDescription(): string
+    public function getDescription(): Text\SimpleDocumentMarkdown
     {
     }
 
-    public function getInputDescription(): Input
+    public function getInputDescription(): \ILIAS\UI\Component\Input\Control\Form\FormInput
     {
+    }
+
+    public function getOutputDescription(Description\Factory $f): Description
+    {
+        return $f->list(
+            "A list of user",
+            $f->object(
+                "a user",
+                $f->field("name", $f->string()),
+                $f->field("login", $f->string())
+            )
+        );
     }
 
     public function isAllowedToPerform(int $usr_id, mixed $parameters): bool

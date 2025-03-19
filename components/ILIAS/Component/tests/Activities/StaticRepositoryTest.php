@@ -23,7 +23,6 @@ namespace ILIAS\Component\Tests\Activities;
 use PHPUnit\Framework\TestCase;
 use ILIAS\Component\Activities\StaticRepository;
 use ILIAS\Component\Activities\Activity;
-use ILIAS\Component\Activities\ActivityType;
 use ILIAS\Component\Dependencies\Name;
 
 class StaticRepositoryTest extends TestCase
@@ -81,87 +80,5 @@ class StaticRepositoryTest extends TestCase
         $activities = iterator_to_array($repository->getActivitiesByName("%.*Some.*%"));
 
         $this->assertEquals($activity, $activities[$name]);
-    }
-
-    public function testGetActivitiesByTypeNoMatch(): void
-    {
-        $name = "\\ILIAS\\Component\\Tests\\SomeActivity";
-
-        $activity = $this->createMock(Activity::class);
-        $activity
-            ->method("getName")
-            ->willReturn(new Name($name));
-        $activity
-            ->method("getType")
-            ->willReturn(ActivityType::Command);
-
-        $repository = new StaticRepository([$activity]);
-
-        $activities = iterator_to_array($repository->getActivitiesByName("%.*%", ActivityType::Query));
-
-        $this->assertEquals([], $activities);
-    }
-
-    public function testGetActivitiesByTypeMatch(): void
-    {
-        $name = "\\ILIAS\\Component\\Tests\\SomeActivity";
-
-        $activity = $this->createMock(Activity::class);
-        $activity
-            ->method("getName")
-            ->willReturn(new Name($name));
-        $activity
-            ->method("getType")
-            ->willReturn(ActivityType::Command);
-
-        $repository = new StaticRepository([$activity]);
-
-        $activities = iterator_to_array($repository->getActivitiesByName("%.*%", ActivityType::Command));
-
-        $this->assertEquals([$activity], array_values($activities));
-    }
-
-    public function testGetActivitiesInRange(): void
-    {
-        $name = "\\ILIAS\\Component\\Tests\\SomeActivity";
-
-        $activity = $this->createMock(Activity::class);
-        $activity
-            ->method("getName")
-            ->willReturnOnConsecutiveCalls(
-                new Name($name . "1"),
-                new Name($name . "2"),
-                new Name($name . "3"),
-                new Name($name . "4"),
-                new Name($name . "5")
-            );
-
-        $repository = new StaticRepository([$activity, $activity, $activity, $activity, $activity]);
-
-        $activities = iterator_to_array($repository->getActivitiesByName("%.*%", null, new \ILIAS\Data\Range(0, 3)));
-
-        $this->assertEquals([$activity, $activity, $activity], array_values($activities));
-    }
-
-    public function testGetActivitiesInRange2(): void
-    {
-        $name = "\\ILIAS\\Component\\Tests\\SomeActivity";
-
-        $activity = $this->createMock(Activity::class);
-        $activity
-            ->method("getName")
-            ->willReturnOnConsecutiveCalls(
-                new Name($name . "1"),
-                new Name($name . "2"),
-                new Name($name . "3"),
-                new Name($name . "4"),
-                new Name($name . "5")
-            );
-
-        $repository = new StaticRepository([$activity, $activity, $activity, $activity, $activity]);
-
-        $activities = iterator_to_array($repository->getActivitiesByName("%.*%", null, new \ILIAS\Data\Range(3, 3)));
-
-        $this->assertEquals([$activity, $activity], array_values($activities));
     }
 }

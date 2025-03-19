@@ -23,7 +23,8 @@ namespace ILIAS\Component\Activities;
 use ILIAS\Component\Dependencies\Name;
 use ILIAS\UI\Component\Input\Control\Form\FormInput;
 use ILIAS\Data\Result;
-use ILIAS\UI\Component\Input\Input;
+use ILIAS\Data\Text;
+use ILIAS\Data\Description\Description;
 
 /**
  * An Activity is an action on the domain layer action of a component.
@@ -43,9 +44,11 @@ interface Activity
 
     public function getType(): ActivityType;
 
-    public function getDescription(): string; // shall be TextHandling/Markdown some day
+    public function getDescription(): Text\SimpleDocumentMarkdown;
 
-    public function getInputDescription(): Input; // might better be ILIAS/UI/Input/Input, but we would need to promote many properties there before.
+    public function getInputDescription(): FormInput; // might better be ILIAS/UI/Input/Input, but we would need to promote many properties there before.
+
+    public function getOutputDescription(Description\Factory $f): Description;
 
     /**
      * This shall check if the given user is allowed to perform the activity based
@@ -59,7 +62,9 @@ interface Activity
     public function isAllowedToPerform(int $usr_id, mixed $parameters): bool;
 
     /**
-     * This shall perform the activity. This shall not check if a user is allowed to perform the activity.
+     * This shall perform the activity. This shall not check if a user is allowed to
+     * perform the activity. The returned data should match the Description given by
+     * `getOutputDescription`.
      *
      * @throws any SPL Exception (https://www.php.net/manual/en/spl.exceptions.php)
      * @param mixed $parameters whatever the `FormInput` from `getInputDescription` produces.

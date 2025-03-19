@@ -18,15 +18,16 @@
 
 declare(strict_types=1);
 
-namespace ILIAS\Component\Activities;
+namespace ILIAS\Data\Description;
 
-interface Repository
+use ILIAS\Data\Text;
+
+abstract class DList extends Description
 {
-    /**
-     * Get all activities where the name matches the provided regexp.
-     *
-     * @param string $name_matcher as preg_match can understand
-     * @return Iterator<string, Activity> where keys are the name
-     */
-    public function getActivitiesByName(string $name_matcher, ?ActivityType $type = null, ?Range $range = null): \Iterator;
+    public function __construct(
+        Text\SimpleDocumentMarkdown $description,
+        protected Description $contained_type
+    ) {
+        parent::__construct($description);
+    }
 }

@@ -28,6 +28,6 @@ abstract class ActivityImpl implements Activity
 {
     public function getName(): \ILIAS\Component\Dependencies\Name
     {
-        return new \ILIAS\Component\Dependencies\Name(static::class);
+        return new \ILIAS\Component\Dependencies\Name(self::class);
     }
 }

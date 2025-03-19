@@ -18,15 +18,13 @@
 
 declare(strict_types=1);
 
-namespace ILIAS\Component\Activities;
+namespace ILIAS\Data\Description;
 
-interface Repository
+enum ValueType: string
 {
-    /**
-     * Get all activities where the name matches the provided regexp.
-     *
-     * @param string $name_matcher as preg_match can understand
-     * @return Iterator<string, Activity> where keys are the name
-     */
-    public function getActivitiesByName(string $name_matcher, ?ActivityType $type = null, ?Range $range = null): \Iterator;
+    case INT = "int";
+    case FLOAT = "float";
+    case STRING = "string";
+    case DATETIME = "datetime";
+    case BOOL = "bool";
 }
