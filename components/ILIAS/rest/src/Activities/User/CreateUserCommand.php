@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace ILIAS\User\Activities;
 
+use ILIAS\Data\Text\SimpleDocumentMarkdown;
 use ILIAS\UI\Implementation\Component\Input\Container\Form\Form;
 use ILIAS\UI\Implementation\Component\Input\DynamicInputsNameSource;
 use InvalidArgumentException;
@@ -44,9 +45,9 @@ class CreateUserCommand extends Command
         return new \ILIAS\Component\Dependencies\Name(self::class);
     }
 
-    public function getDescription(): string
+    public function getDescription(): SimpleDocumentMarkdown
     {
-        return 'CreateCourse Command';
+        return  (new Factory())->text()->markdown()->simpleDocument("Creates a new user account");;
     }
 
     public function getInputDescription(): \ILIAS\UI\Component\Input\Input

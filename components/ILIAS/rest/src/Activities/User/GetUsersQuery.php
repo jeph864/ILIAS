@@ -24,6 +24,7 @@ use ilDatabaseException;
 use ILIAS\Component\Activities\ActivityImpl;
 use ILIAS\Component\Activities\Query;
 use ILIAS\Data\Result;
+use ILIAS\Data\Text\SimpleDocumentMarkdown;
 use ILIAS\UI\Implementation\Component\Input\Field\FormInput;
 use ilObjCourse;
 use ILIAS\Data\Factory;
@@ -41,9 +42,9 @@ class GetUsersQuery extends Query
 {
     use AbstractUserActivity;
 
-    public function getDescription(): string
+    public function getDescription(): SimpleDocumentMarkdown
     {
-        return 'List User Query';
+        return  (new Factory())->text()->markdown()->simpleDocument("Lists all Users available in the system");
     }
     public function getName(): \ILIAS\Component\Dependencies\Name
     {

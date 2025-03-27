@@ -25,6 +25,7 @@ use ILIAS\Component\Activities\ActivityImpl;
 use ILIAS\Component\Activities\Command;
 use ILIAS\Component\Activities\Query;
 use ILIAS\Data\Result;
+use ILIAS\Data\Text\SimpleDocumentMarkdown;
 use ILIAS\UI\Implementation\Component\Input\Field\FormInput;
 use ILIAS\UI\Implementation\Component\Input\DynamicInputsNameSource;
 use ilObjCourse;
@@ -51,9 +52,9 @@ class UpdateUserSettings extends Command
     }
 
 
-    public function getDescription(): string
+    public function getDescription(): SimpleDocumentMarkdown
     {
-        return 'Update Course Command';
+        return  (new Factory())->text()->markdown()->simpleDocument("Updates user information");
     }
 
     public function getInputDescription(): \ILIAS\UI\Component\Input\Input

@@ -38,6 +38,7 @@ use ilObjectNotFoundException;
 class CreateCourseCommand extends Command
 {
     use AbstractCourseActivity;
+
     public function __construct()
     {
         $this->factory = new Factory();
@@ -49,9 +50,9 @@ class CreateCourseCommand extends Command
     }
 
 
-    public function getDescription(): string
+    public function getDescription(): \ILIAS\Data\Text\SimpleDocumentMarkdown
     {
-        return 'CreateCourse Command';
+        return $this->factory->text()->markdown()->simpleDocument('CreateCourse Command');
     }
 
 

@@ -68,7 +68,8 @@ $collection = new \ILIAS\Component\Activities\StaticRepository(
         new \ILIAS\User\Activities\GetUserQuery(),
         new \ILIAS\User\Activities\GetUsersQuery(),
         new \ILIAS\User\Activities\CreateUserCommand(),
-        new \ILIAS\User\Activities\UpdateUserSettings()
+        new \ILIAS\User\Activities\UpdateUserSettings(),
+        new \ILIAS\Course\Activities\AddMember()
     )
 );
 

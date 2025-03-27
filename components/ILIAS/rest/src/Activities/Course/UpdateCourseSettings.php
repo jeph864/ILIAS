@@ -26,6 +26,7 @@ use ILIAS\Component\Activities\Command;
 use ILIAS\Component\Activities\ObjectActivity;
 use ILIAS\Component\Activities\Query;
 use ILIAS\Data\Result;
+use ILIAS\Data\Text\SimpleDocumentMarkdown;
 use ILIAS\UI\Implementation\Component\Input\Container\Form\Form;
 use ILIAS\UI\Implementation\Component\Input\Field\FormInput;
 use ilObjCourse;
@@ -50,9 +51,9 @@ class UpdateCourseSettings extends Command implements ObjectActivity
     }
 
 
-    public function getDescription(): string
+    public function getDescription(): SimpleDocumentMarkdown
     {
-        return 'Update Course Command';
+        return  (new Factory())->text()->markdown()->simpleDocument("Updates course settings");
     }
 
 

@@ -3,6 +3,12 @@
 namespace ILIAS\REST\Handlers;
 
 use ILIAS\Component\Activities\Activity;
+use ILIAS\Export\ImportStatus\Exception\ilException;
+use ILIAS\UI\Component\Input\Container\Form\FormInput;
+use ILIAS\UI\Component\Input\Container\Form\Standard;
+use ILIAS\UI\Component\Input\Group;
+use ILIAS\UI\Component\Input\Input;
+use ILIAS\UI\Implementation\Component\Input\ArrayInputData;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -14,11 +20,18 @@ use Psr\Http\Message\ServerRequestInterface as Request;
  */
 class DynamicActivityHandler implements ActivityHandler
 {
+    protected int $usr_id;
     public function __construct(protected Activity $activity)
     {
+
     }
-    public function __invoke(Request $request, Response $response, array $args)
+
+    public function __invoke(mixed $parameters)
     {
+        $this->validate($parameters);
+       if( $this->activity->isAllowedToPerform($this->usr_id, $parameters)) {
+           $this->activity->perform($parameters);
+       }
     }
 
     /**
@@ -27,13 +40,35 @@ class DynamicActivityHandler implements ActivityHandler
      * @param array $parameters The input parameters to validate.
      * @return bool True if the input is valid, false otherwise.
      */
-    public function validate(array $parameters): bool
+    public function validate(array $parameters): mixed
     {
-        $form = $this->activity->getInputDescription();
-        $form->withJson($parameters);
+        global $DIC;
 
-        $GLOBALS['DIC']->logger()->root()->dump(array($form->getData()));
-        return  true;
+        $inputs = $this->activity->getInputDescription();
+        $form = $DIC->ui()->factory()->input()->container()->form()->standard('', $inputs->getInputs());
+        $template = $form->foldWith(
+            function (\ILIAS\UI\Component\Component $c){
+                $subs = $c->getSubStructure();
+                if ($subs != null) {
+                    return $subs;
+                }else {
+                    return '';
+                }
+            }
+        );
+        $parameters = $this->initializeMissingValues($template, $this->transform($parameters));
+        $form = $form->withInput(new ArrayInputData($parameters));
+
+        if ($form->getError()) {
+            $errors = array_map( fn($comp) => $comp->getError(), $form->getInputs());
+            foreach ($errors as $key => $message)
+            {
+                if($message)
+                throw new ilException("Error in the input. {$key}: {$message}");
+            }
+        }
+        return $parameters;
+
     }
 
     /**
@@ -62,6 +97,34 @@ class DynamicActivityHandler implements ActivityHandler
     public function dispatch(array $parameters): mixed
     {
     }
+
+    private function initializeMissingValues(array $template, array $userInput): array {
+        foreach ($template as $key => $value) {
+            if (is_array($value)) {
+                $userInput[$key] = $this->initializeMissingValues($value, $userInput[$key] ?? []);
+            } else {
+                if (!array_key_exists($key, $userInput)) {
+                    $userInput[$key] = '';
+                }
+            }
+        }
+        return $userInput;
+    }
+
+    private function transform(array $array): array {
+        $result = [];
+        foreach ($array as $key => $value) {
+            if (is_int($key)) {
+                $result[$key] = is_array($value) ? $this->transform($value) : $value;
+            } else {
+                $newKey = 'form/' . $key;
+                $result[$newKey] = is_array($value) ? $this->transform($value) : $value;
+            }
+        }
+        return $result;
+    }
+
+
 
 
 }

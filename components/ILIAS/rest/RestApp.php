@@ -21,6 +21,10 @@ namespace ILIAS\REST;
 use ILIAS\Component\Activities\Activity;
 use ILIAS\Component\Activities\ActivityType;
 use ILIAS\Component\Activities\ObjectActivity;
+use ILIAS\Component\Activities\Query;
+use ILIAS\Data\Description\Description;
+use ILIAS\Data\Factory;
+use ILIAS\Data\Text\SimpleDocumentMarkdown;
 use ILIAS\REST\Handlers\DynamicActivityHandler;
 use ILIAS\REST\Middleware\AuthMiddleware;
 use ILIAS\Specs\Schema\SchemaType;
@@ -36,18 +40,23 @@ use ILIAS\UI\Implementation\Component\Input\PostDataFromServerRequest;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use ILIAS\REST\App;
+use ILIAS\UI\Implementation\Component\Input\ArrayInputData;
 
 class  RestApp implements Webservice
 {
     private array $routes = [];
     private array $pathsSpecs;
+    private  \ILIAS\Data\Description\Factory $description_factory ;
 
+    protected int $usr_id;
     public function __construct(protected App $app, protected \ILIAS\Component\Activities\Repository $activities_registry)
     {
+        $this->description_factory = new \ILIAS\Data\Description\Factory();
         $this->registerRoutes();
         $this->pathsSpecs = [
             'paths' => []
         ];
+
 
     }
 
@@ -62,6 +71,7 @@ class  RestApp implements Webservice
     public function handle(mixed $request): mixed
     {
     }
+
     public function run(): void
     {
         $this->app->run();
@@ -77,21 +87,23 @@ class  RestApp implements Webservice
         if(array_key_exists('id', $args)){
             $args ['id'] = (int) $args ['id'];
         }
+        if($activity instanceof Query && strtolower($request->getMethod()) === 'post' ) {
+            //throw invalid method
+        }
         $params = array_merge($args, $request->getParsedBody() ?? [], $request->getQueryParams() ?? []);
-        $activity_handler = new DynamicActivityHandler($activity);
-        $inputs = $activity->getInputDescription();
-        $request = $request->withParsedBody($params);
-
+        $parameters = $this->validate($params);
+        if($activity->isAllowedToPerform($this->usr_id, $parameters)) {
+            $result = $activity->perform($parameters);
+        }
         $payload = new ActionPayload(
-            $activity->getOutDescription(),
-            $activity->perform($params)
+            $activity->getOutputDescription($this->description_factory),
+            $result
         );
         $response->getBody()->write(json_encode($payload->cast()->jsonSerialize()));
         foreach ($payload->getHeaders() as $name => $value) {
             $response->withHeader($name, $value);
         }
         return $response->withHeader('Content-Type', 'application/json');
-
 
     }
 
@@ -122,6 +134,7 @@ class  RestApp implements Webservice
 
     public function registerRoutes(): void
     {
+        $data_factory = new \ILIAS\Data\Factory();
         static $routes = [];
         //Auto-register routes based on actions
         foreach ($this->activities_registry->getActivitiesByName('/.*/') as $name => $activity){
@@ -150,10 +163,11 @@ class  RestApp implements Webservice
             $input_specs = self::generateInputSpecs($activity->getInputDescription());
             $this->pathsSpecs['paths'][$route] = [
                 strtolower($method) => [
-                    'summary' => $activity->getDescription(),
+                    'summary' => $activity->getDescription()->getRawRepresentation(),
                     'operationId' => (string) $activity->getName(),
                     'requestBody' =>  $input_specs,
-                    'responses' => $this->generateOutputSpecs($activity->getOutDescription())
+                    'responses' => $this->generateOutputSpecs($activity->getOutputDescription(
+                        $this->description_factory))
                 ]
             ];
         }
@@ -166,30 +180,6 @@ class  RestApp implements Webservice
 
     }
 
-    /**
-     * Register individual action route
-     */
-    protected function registerActionRoute(Action $action): void {
-
-        $method = $action->getMethod();
-        $path = $action->getPath();
-
-        if (array_key_exists($path, $this->routes)  && $this->routes[$path] = $method){
-            return;
-        }
-
-        $route = $this->app->map([$method], $path, function (
-            Request $request,
-            Response $response,
-            array $args
-        ) use ($action) {
-            return $this->handleAction($action, $request, $response, $args);
-        });
-        if ($action->requiresAuthentication()){
-            $route->addMiddleware(new AuthMiddleware());
-        }
-        $this->routes [] =  [$path => $method];
-    }
 
     public function isRouteRegistered(string $route, string $method): bool
     {
@@ -201,6 +191,96 @@ class  RestApp implements Webservice
         }
 
         return false; // Route is not registered
+    }
+
+    /**
+     * Validates the input parameters against the Activity's InputDescription.
+     *
+     * @param array $parameters The input parameters to validate.
+     * @return bool True if the input is valid, false otherwise.
+     */
+    public function validate(array $parameters): mixed
+    {
+        global $DIC;
+
+        $inputs = $this->activity->getInputDescription();
+        $form = $DIC->ui()->factory()->input()->container()->form()->standard('', $inputs->getInputs());
+        $template = $form->foldWith(
+            function (\ILIAS\UI\Component\Component $c){
+                $subs = $c->getSubStructure();
+                if ($subs != null) {
+                    return $subs;
+                }else {
+                    return '';
+                }
+            }
+        );
+        $parameters = $this->initializeMissingValues($template, $this->transform($parameters));
+        $form = $form->withInput(new ArrayInputData($parameters));
+
+        if ($form->getError()) {
+            $errors = array_map( fn($comp) => $comp->getError(), $form->getInputs());
+            foreach ($errors as $key => $message)
+            {
+                if($message)
+                    throw new ilException("Error in the input. {$key}: {$message}");
+            }
+        }
+        return $parameters;
+
+    }
+
+    /**
+     * Sanitizes input parameters based on the Activity's InputDescription.
+     *
+     * @param array $parameters The raw input parameters.
+     * @return array The sanitized parameters.
+     */
+    public function sanitize(array $parameters): array
+    {
+    }
+    /**
+     * You might not need this. This should be in routers. The idea is to provide a route given an activiy
+     */
+    public function resolve()
+    {
+    }
+
+    /**
+     * Dispatches the Activity with sanitized parameters and returns the result.
+     * This would be a wrapper to an activities 'perform' or 'performAs'.
+     *
+     * @param array $parameters The input parameters to pass to the activity.
+     * @return mixed The result of the activity execution.
+     */
+    public function dispatch(array $parameters): mixed
+    {
+    }
+
+    private function initializeMissingValues(array $template, array $userInput): array {
+        foreach ($template as $key => $value) {
+            if (is_array($value)) {
+                $userInput[$key] = $this->initializeMissingValues($value, $userInput[$key] ?? []);
+            } else {
+                if (!array_key_exists($key, $userInput)) {
+                    $userInput[$key] = '';
+                }
+            }
+        }
+        return $userInput;
+    }
+
+    private function transform(array $array): array {
+        $result = [];
+        foreach ($array as $key => $value) {
+            if (is_int($key)) {
+                $result[$key] = is_array($value) ? $this->transform($value) : $value;
+            } else {
+                $newKey = 'form/' . $key;
+                $result[$newKey] = is_array($value) ? $this->transform($value) : $value;
+            }
+        }
+        return $result;
     }
 
     /**
@@ -327,7 +407,7 @@ class  RestApp implements Webservice
     }
 
 // Generate output specs using walk
-    protected  function generateOutputSpecs(SchemaType $outputDescription)
+    protected  function generateOutputSpecs(Description $outputDescription)
     {
 
         return [
@@ -335,7 +415,7 @@ class  RestApp implements Webservice
                 'description' => 'Successful response',
                 'content' => [
                     'application/json' => [
-                        'schema' => $outputDescription->toSchema()
+                        'schema' => $outputDescription->getDescription()->getRawRepresentation()
                     ]
                 ]
             ]
@@ -348,12 +428,13 @@ class  RestApp implements Webservice
      * @param JSON $jsonGroup
      * @return ObjectType
      */
-    public static function walk(JSON $jsonGroup): array
+    public static function walk(Input $jsonGroup): array
     {
         $schema = [
             'type' => 'object',
             'properties' => [],
         ];
+        //return $schema;
 
         foreach ($jsonGroup->getInputs() as $key => $input) {
             $schema['properties'][$key] = self::describeInput($input);

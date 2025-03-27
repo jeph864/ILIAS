@@ -20,7 +20,7 @@ interface ActivityHandler
      * @param array $parameters The input parameters to validate.
      * @return bool True if the input is valid, false otherwise.
      */
-    public function validate(array $parameters): bool;
+    public function validate(array $parameters): mixed;
 
     /**
      * Sanitizes input parameters based on the Activity's InputDescription.

@@ -53,7 +53,7 @@ class ActionResolver
             }else $resolved = [new $class($this->container), $method];
         }
 
-        //make sure our action is callable
+        //make sure our action is resolvable
         if (!is_callable($resolved)) {
             throw new RuntimeException(sprintf(
                 '%s is not resolvable',

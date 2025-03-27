@@ -22,15 +22,21 @@ use ilAuthFrontendCredentials;
 use ilAuthFrontendFactory;
 use ilAuthProviderFactory;
 use ilAuthStatus;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Slim\Psr7\Factory\ResponseFactory;
+
 
 class AuthMiddleware implements MiddlewareInterface
 {
 
+    public function __construct(
+        protected ResponseFactoryInterface $responseFactory
+    )
+    {
+    }
 
     public function process(Request $request, RequestHandlerInterface $handler): Response
     {
@@ -105,7 +111,7 @@ class AuthMiddleware implements MiddlewareInterface
 
     private function unauthorizedResponse(): Response
     {
-        $response = (new ResponseFactory())->createResponse(401);
+        $response = $this->responseFactory->createResponse(401);
         $response->getBody()->write(json_encode(['error' => 'Unauthorized']));
         return $response->withHeader('Content-Type', 'application/json');
     }

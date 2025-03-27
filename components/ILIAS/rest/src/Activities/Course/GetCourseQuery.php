@@ -24,6 +24,7 @@ use ilDatabaseException;
 use ILIAS\Component\Activities\ObjectActivity;
 use ILIAS\Component\Activities\Query;
 use ILIAS\Data\Result;
+use ILIAS\Data\Text\SimpleDocumentMarkdown;
 use ILIAS\UI\Component\Input\Container\Form\Form;
 use ILIAS\UI\Component\Input\Input;
 use ILIAS\User\Activities\AbstractUserActivity;
@@ -52,9 +53,9 @@ class GetCourseQuery extends Query implements ObjectActivity
         return new \ILIAS\Component\Dependencies\Name(self::class);
     }
 
-    public function getDescription(): string
+    public function getDescription(): SimpleDocumentMarkdown
     {
-        return 'GetCourseQuery';
+        return (new Factory())->text()->markdown()->simpleDocument("Retrieves course");
     }
 
     public function getInputDescription(): Input
@@ -83,7 +84,8 @@ class GetCourseQuery extends Query implements ObjectActivity
 
 
         /** @var ilObjCourse $ilias_course */
-        $ilias_course =  ilObjectFactory::getInstanceByRefId($parameters['ref_id']);
+        $ilias_course =  ilObjectFactory::getInstanceByRefId($parameters['id']);
+
         return [
             "title" => $ilias_course->getTitle(),
             "ref_id" => $ilias_course->getRefId(),

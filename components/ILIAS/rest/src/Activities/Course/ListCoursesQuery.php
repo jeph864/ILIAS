@@ -24,6 +24,7 @@ use ilDatabaseException;
 use ILIAS\Component\Activities\ActivityImpl;
 use ILIAS\Component\Activities\Query;
 use ILIAS\Data\Result;
+use ILIAS\Data\Text\SimpleDocumentMarkdown;
 use ILIAS\UI\Implementation\Component\Input\Container\Form\Form;
 use ILIAS\UI\Implementation\Component\Input\Field\FormInput;
 use ilObjCourse;
@@ -43,9 +44,9 @@ class ListCoursesQuery extends Query
         return new \ILIAS\Component\Dependencies\Name(self::class);
     }
 
-    public function getDescription(): string
+    public function getDescription(): SimpleDocumentMarkdown
     {
-        return 'List CourseQuery';
+        return  (new Factory())->text()->markdown()->simpleDocument("Lists all available courses");
     }
 
 

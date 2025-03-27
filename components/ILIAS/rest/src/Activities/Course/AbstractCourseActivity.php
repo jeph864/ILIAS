@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace ILIAS\Course\Activities;
 
 
+use ILIAS\Data\Description\Description;
 use ILIAS\Data\Result;
 use ILIAS\Specs\Schema\SchemaType;
 use ILIAS\UI\Component\Input\Input;
@@ -102,9 +103,18 @@ trait  AbstractCourseActivity
 
     }
 
-    public function getOutDescription(): SchemaType
+    public function getOutputDescription(\ILIAS\Data\Description\Factory $f): Description
     {
-        return (new \ILIAS\Specs\Schema\Factory())->int('some_value');
+        return $f->map(
+            "A list of user",
+            $f->string(''),
+            $f->object(
+                "a user",
+                $f->field("name", $f->string("description A")),
+                $f->field("login", $f->string("description B"))
+            )
+        );
+
     }
 
 
